@@ -18,46 +18,36 @@ body {
   width: 100%;
 }
 
-/* 연기 애니메이션 */
-@keyframes smoke {
+/* 연기 올라가는 애니메이션 */
+@keyframes smokeRise {
   0% {
-    opacity: 0.8;
-    transform: translateY(0) scale(1);
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: var(--start-opacity, 0.4);
+  }
+  30% {
+    transform: translateY(-50px) translateX(calc(var(--drift) * 0.3)) scale(1.5);
+    opacity: var(--start-opacity, 0.3);
+  }
+  60% {
+    transform: translateY(-100px) translateX(calc(var(--drift) * 0.7)) scale(2.2);
+    opacity: 0.15;
   }
   100% {
+    transform: translateY(-180px) translateX(var(--drift)) scale(3);
     opacity: 0;
-    transform: translateY(-100px) scale(2);
   }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(10px);
-  }
-}
-
-.smoke-particle {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background: radial-gradient(circle, rgba(200, 200, 200, 0.6) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: smoke 2s ease-out forwards, float 1s ease-in-out infinite;
 }
 
 /* 담배 타는 효과 */
 @keyframes burn {
   0% {
-    box-shadow: 0 0 5px #ff4500, 0 0 10px #ff6b35;
+    box-shadow: 0 0 5px #ff4500, 0 0 10px #ff6b35, 0 0 15px rgba(255, 69, 0, 0.3);
   }
   50% {
-    box-shadow: 0 0 10px #ff4500, 0 0 20px #ff6b35;
+    box-shadow: 0 0 10px #ff4500, 0 0 20px #ff6b35, 0 0 30px rgba(255, 69, 0, 0.5);
   }
   100% {
-    box-shadow: 0 0 5px #ff4500, 0 0 10px #ff6b35;
+    box-shadow: 0 0 5px #ff4500, 0 0 10px #ff6b35, 0 0 15px rgba(255, 69, 0, 0.3);
   }
 }
 

@@ -4,14 +4,17 @@ import Cigarette from './components/Cigarette';
 // 상수
 const PRICE_PER_CIGARETTE = 250; // 원
 const MINUTES_LOST_PER_CIGARETTE = 11; // 분
-const BURN_INTERVAL = 200; // ms - 누르고 있을 때 타는 속도
-const BURN_AMOUNT = 1; // 한 번에 타는 양
+const BURN_INTERVAL = 150; // ms - 누르고 있을 때 타는 속도
+const BURN_AMOUNT = 1; // 한 번에 타는 양 (15초 = 100번 x 150ms)
 
 function App() {
   const [cigaretteCount, setCigaretteCount] = useState(0);
   const [burnLevel, setBurnLevel] = useState(0);
   const [isBurning, setIsBurning] = useState(false);
+  const [isAutoMode, setIsAutoMode] = useState(false);
   const intervalRef = useRef<number | null>(null);
+  const clickCountRef = useRef(0);
+  const clickTimerRef = useRef<number | null>(null);
 
   // 통계 계산
   const moneySpent = cigaretteCount * PRICE_PER_CIGARETTE;
@@ -33,12 +36,11 @@ function App() {
     if (isBurning) {
       intervalRef.current = window.setInterval(() => {
         setBurnLevel(prev => {
-          if (prev >= 100) {
-            // 담배 다 탔으면 새 담배
-            setCigaretteCount(c => c + 1);
-            return 0;
+          const next = prev + BURN_AMOUNT;
+          if (next >= 100) {
+            return 100; // 일단 100으로 설정
           }
-          return Math.min(100, prev + BURN_AMOUNT);
+          return next;
         });
       }, BURN_INTERVAL);
     } else {
@@ -55,14 +57,65 @@ function App() {
     };
   }, [isBurning]);
 
-  // 누르기 시작
-  const startSmoking = () => {
-    setIsBurning(true);
+  // 담배가 다 타면 카운트 증가 및 리셋
+  useEffect(() => {
+    if (burnLevel >= 100) {
+      setCigaretteCount(c => c + 1);
+      setBurnLevel(0);
+    }
+  }, [burnLevel]);
+
+  // 클릭 핸들러 (더블클릭 감지 포함)
+  const handleMouseDown = () => {
+    // 자동 모드일 때는 아무 클릭이나 중지
+    if (isAutoMode) {
+      setIsAutoMode(false);
+      setIsBurning(false);
+      return;
+    }
+
+    clickCountRef.current += 1;
+
+    if (clickCountRef.current === 1) {
+      // 첫 번째 클릭 - 200ms 내에 두 번째 클릭이 오는지 확인
+      clickTimerRef.current = window.setTimeout(() => {
+        // 싱글 클릭으로 처리
+        clickCountRef.current = 0;
+        if (!isAutoMode) {
+          setIsBurning(true);
+        }
+      }, 200);
+    } else if (clickCountRef.current === 2) {
+      // 더블클릭
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+      clickCountRef.current = 0;
+
+      // 자동 모드 시작
+      setIsAutoMode(true);
+      setIsBurning(true);
+    }
   };
 
   // 누르기 끝
   const stopSmoking = () => {
-    setIsBurning(false);
+    if (!isAutoMode && clickCountRef.current === 0) {
+      setIsBurning(false);
+    }
+  };
+
+  // 담배 직접 누르기 (단순 누르고 있는 동안만)
+  const startDirectSmoking = () => {
+    if (!isAutoMode) {
+      setIsBurning(true);
+    }
+  };
+
+  const stopDirectSmoking = () => {
+    if (!isAutoMode) {
+      setIsBurning(false);
+    }
   };
 
   return (
@@ -77,7 +130,12 @@ function App() {
 
       {/* 담배 */}
       <main className="flex items-center justify-center">
-        <Cigarette burnLevel={burnLevel} isBurning={isBurning} />
+        <Cigarette
+          burnLevel={burnLevel}
+          isBurning={isBurning}
+          onStartSmoking={startDirectSmoking}
+          onStopSmoking={stopDirectSmoking}
+        />
       </main>
 
       {/* 하단 영역 */}
@@ -100,14 +158,14 @@ function App() {
 
         {/* 버튼 */}
         <button
-          onMouseDown={startSmoking}
+          onMouseDown={handleMouseDown}
           onMouseUp={stopSmoking}
           onMouseLeave={stopSmoking}
-          onTouchStart={startSmoking}
+          onTouchStart={handleMouseDown}
           onTouchEnd={stopSmoking}
           className={`w-full py-4 px-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-lg transition-all transform hover:scale-105 active:scale-95 select-none ${isBurning ? 'ring-2 ring-orange-400 ring-opacity-50' : ''}`}
         >
-          🔥 {isBurning ? '피우는 중...' : '꾹 눌러서 담배 피우기'}
+          {isAutoMode ? '🔥 자동 피우는 중... (클릭하여 중지)' : isBurning ? '🔥 피우는 중...' : '🔥 꾹 눌러서 피우기 (더블클릭: 자동)'}
         </button>
 
         {/* 푸터 */}
