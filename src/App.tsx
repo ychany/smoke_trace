@@ -194,6 +194,9 @@ function App() {
         <p className="text-gray-600 text-xs text-center">
           * 1개비당 약 ₩250, 수명 11분 감소 (의학 통계 기반)
         </p>
+        <p className="text-gray-700 text-xs text-center">
+          © 2026 JO YEONG CHAN. All rights reserved.
+        </p>
       </div>
     </div>
   );
