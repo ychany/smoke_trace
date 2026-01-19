@@ -1,0 +1,110 @@
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, set, get, onDisconnect, serverTimestamp } from 'firebase/database';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+};
+
+// Firebase 초기화
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 고유 사용자 ID 생성
+const getUserId = () => {
+  let id = localStorage.getItem('smoke_trace_user_id');
+  if (!id) {
+    id = 'user_' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('smoke_trace_user_id', id);
+  }
+  return id;
+};
+
+export const userId = getUserId();
+
+// 참조
+export const statsRef = ref(db, 'stats');
+export const activeUsersRef = ref(db, 'activeUsers');
+export const userRef = ref(db, `activeUsers/${userId}`);
+
+// 접속 등록 및 해제
+export const registerPresence = () => {
+  // 현재 접속 등록
+  set(userRef, {
+    timestamp: serverTimestamp(),
+    isSmoking: false
+  });
+
+  // 연결 해제 시 자동 삭제
+  onDisconnect(userRef).remove();
+};
+
+// 흡연 상태 업데이트
+export const updateSmokingStatus = (isSmoking: boolean) => {
+  set(userRef, {
+    timestamp: serverTimestamp(),
+    isSmoking
+  });
+};
+
+// 담배 카운트 증가
+export const incrementCigaretteCount = async () => {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+  // 현재 통계 가져오기
+  const snapshot = await get(statsRef);
+  const stats = snapshot.val() || { todayCount: 0, totalCount: 0, lastDate: today };
+
+  // 날짜가 바뀌었으면 todayCount 리셋
+  if (stats.lastDate !== today) {
+    await set(statsRef, {
+      todayCount: 1,
+      totalCount: (stats.totalCount || 0) + 1,
+      lastDate: today
+    });
+  } else {
+    await set(statsRef, {
+      todayCount: (stats.todayCount || 0) + 1,
+      totalCount: (stats.totalCount || 0) + 1,
+      lastDate: today
+    });
+  }
+};
+
+// 실시간 통계 구독
+export const subscribeToStats = (callback: (stats: { todayCount: number; totalCount: number }) => void) => {
+  return onValue(statsRef, (snapshot) => {
+    const stats = snapshot.val() || { todayCount: 0, totalCount: 0 };
+    callback(stats);
+  });
+};
+
+// 실시간 활성 사용자 구독
+export const subscribeToActiveUsers = (callback: (count: number, smokingCount: number) => void) => {
+  return onValue(activeUsersRef, (snapshot) => {
+    const users = snapshot.val() || {};
+    const now = Date.now();
+    let activeCount = 0;
+    let smokingCount = 0;
+
+    Object.values(users).forEach((user: any) => {
+      // 30초 이내 활동한 사용자만 카운트
+      if (user.timestamp && (now - user.timestamp) < 30000) {
+        activeCount++;
+        if (user.isSmoking) {
+          smokingCount++;
+        }
+      }
+    });
+
+    callback(activeCount, smokingCount);
+  });
+};
+
+export { db };

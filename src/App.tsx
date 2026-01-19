@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Cigarette from './components/Cigarette';
+import { useFirebase } from './hooks/useFirebase';
 
 // 상수
 const PRICE_PER_CIGARETTE = 250; // 원
@@ -15,6 +16,9 @@ function App() {
   const intervalRef = useRef<number | null>(null);
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
+
+  // Firebase 연동
+  const { stats, activeUsers, setSmokingStatus, addCigarette } = useFirebase();
 
   // 통계 계산
   const moneySpent = cigaretteCount * PRICE_PER_CIGARETTE;
@@ -57,13 +61,19 @@ function App() {
     };
   }, [isBurning]);
 
+  // 흡연 상태 Firebase에 업데이트
+  useEffect(() => {
+    setSmokingStatus(isBurning);
+  }, [isBurning, setSmokingStatus]);
+
   // 담배가 다 타면 카운트 증가 및 리셋
   useEffect(() => {
     if (burnLevel >= 100) {
       setCigaretteCount(c => c + 1);
+      addCigarette(); // Firebase에 카운트 증가
       setBurnLevel(0);
     }
-  }, [burnLevel]);
+  }, [burnLevel, addCigarette]);
 
   // 클릭 핸들러 (더블클릭 감지 포함)
   const handleMouseDown = () => {
@@ -119,7 +129,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-between px-4 py-12">
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-between px-4 py-8">
       {/* 헤더 */}
       <header className="text-center">
         <h1 className="text-3xl font-bold text-white tracking-wider mb-2">
@@ -127,6 +137,18 @@ function App() {
         </h1>
         <p className="text-gray-400 text-sm">한 개비가 남기는 흔적</p>
       </header>
+
+      {/* 실시간 통계 */}
+      <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+        <span className="flex items-center gap-1">
+          <span className={`w-2 h-2 rounded-full ${activeUsers.smoking > 0 ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`}></span>
+          {activeUsers.smoking > 0 ? `${activeUsers.smoking}명 피우는 중` : `${activeUsers.total}명 접속 중`}
+        </span>
+        <span>|</span>
+        <span>오늘 {stats.todayCount.toLocaleString()}개비</span>
+        <span>|</span>
+        <span>누적 {stats.totalCount.toLocaleString()}개비</span>
+      </div>
 
       {/* 담배 */}
       <main className="flex items-center justify-center">
@@ -140,7 +162,7 @@ function App() {
 
       {/* 하단 영역 */}
       <div className="w-full max-w-xs flex flex-col items-center gap-6">
-        {/* 통계 */}
+        {/* 개인 통계 */}
         <div className="flex flex-col items-center gap-2 text-gray-300">
           <div className="flex items-center gap-2">
             <span>🚬</span>
