@@ -1,73 +1,84 @@
-# React + TypeScript + Vite
+# SMOKE TRACE
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+담배 한 개비가 남기는 흔적을 시각화하는 교육용 웹앱입니다.
 
-Currently, two official plugins are available:
+## 기능
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 담배 피우기 시뮬레이션 (꾹 누르기 / 더블클릭 자동 모드)
+- 실시간 연기 파티클 효과
+- 개인 통계: 피운 개비, 태운 돈, 줄어든 수명
+- 실시간 전체 통계: 동시 접속자, 흡연 중인 사용자, 오늘/누적 개비 수
 
-## React Compiler
+## 기술 스택
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React + TypeScript + Vite
+- Tailwind CSS
+- Firebase Realtime Database
+- Vercel (배포)
 
-## Expanding the ESLint configuration
+## 설치 및 실행
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# 의존성 설치
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# 개발 서버 실행
+npm run dev
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 프로덕션 빌드
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 환경 변수 설정
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+`.env.example`을 참고하여 `.env` 파일을 생성하세요.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_DATABASE_URL=https://your_project.firebasedatabase.app
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+## Firebase 보안 규칙
+
+```json
+{
+  "rules": {
+    "stats": {
+      ".read": true,
+      ".write": true,
+      ".validate": "newData.hasChildren(['todayCount', 'totalCount', 'lastDate'])",
+      "todayCount": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+      "totalCount": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+      "lastDate": { ".validate": "newData.isString()" }
+    },
+    "activeUsers": {
+      ".read": true,
+      "$userId": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['timestamp', 'isSmoking'])",
+        "timestamp": { ".validate": "newData.val() <= now" },
+        "isSmoking": { ".validate": "newData.isBoolean()" }
+      }
+    }
+  }
+}
+```
+
+## 사용 방법
+
+1. 화면 하단 버튼을 **꾹 누르면** 담배가 타기 시작합니다
+2. **더블클릭**하면 자동으로 계속 타는 모드가 됩니다
+3. 자동 모드 중 **아무 곳이나 클릭**하면 중지됩니다
+4. 담배 이미지를 직접 눌러도 피울 수 있습니다
+
+## 통계 기준
+
+- 담배 1개비 = 250원
+- 담배 1개비 = 수명 11분 감소 (의학 통계 기반)
+
