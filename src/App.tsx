@@ -16,6 +16,7 @@ function App() {
   const intervalRef = useRef<number | null>(null);
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
+  const isMouseDownRef = useRef(false);
 
   // Firebase 연동
   const { stats, activeUsers, setSmokingStatus, addCigarette } = useFirebase();
@@ -80,10 +81,17 @@ function App() {
 
   // 클릭 핸들러 (더블클릭 감지 포함)
   const handleMouseDown = () => {
+    isMouseDownRef.current = true;
+
     // 자동 모드일 때는 아무 클릭이나 중지
     if (isAutoMode) {
       setIsAutoMode(false);
       setIsBurning(false);
+      clickCountRef.current = 0;
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
       return;
     }
 
@@ -94,7 +102,8 @@ function App() {
       clickTimerRef.current = window.setTimeout(() => {
         // 싱글 클릭으로 처리
         clickCountRef.current = 0;
-        if (!isAutoMode) {
+        // 마우스가 아직 눌려있을 때만 피우기 시작
+        if (!isAutoMode && isMouseDownRef.current) {
           setIsBurning(true);
         }
       }, 200);
@@ -113,6 +122,7 @@ function App() {
 
   // 누르기 끝
   const stopSmoking = () => {
+    isMouseDownRef.current = false;
     if (!isAutoMode && clickCountRef.current === 0) {
       setIsBurning(false);
     }
