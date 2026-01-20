@@ -3,7 +3,7 @@ import Cigarette from './components/Cigarette';
 import { useFirebase } from './hooks/useFirebase';
 
 // 상수
-const PRICE_PER_CIGARETTE = 250; // 원
+const PRICE_PER_CIGARETTE = 225; // 원
 const MINUTES_LOST_PER_CIGARETTE = 11; // 분
 const BURN_INTERVAL = 150; // ms - 누르고 있을 때 타는 속도
 const BURN_AMOUNT = 1; // 한 번에 타는 양 (15초 = 100번 x 150ms)
@@ -192,7 +192,7 @@ function App() {
 
         {/* 푸터 */}
         <p className="text-gray-600 text-xs text-center">
-          * 1개비당 약 ₩250, 수명 11분 감소 (의학 통계 기반)
+          * 1개비당 약 ₩225, 수명 11분 감소
         </p>
         <p className="text-gray-700 text-xs text-center">
           © 2026 JO YEONG CHAN. All rights reserved.
