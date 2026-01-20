@@ -24,6 +24,9 @@ function App() {
   const moneySpent = cigaretteCount * PRICE_PER_CIGARETTE;
   const minutesLost = cigaretteCount * MINUTES_LOST_PER_CIGARETTE;
 
+  // 화면 탁해지는 효과 (담배 피우는 동안 점점 탁해짐)
+  const smokeOpacity = isBurning ? (burnLevel / 100) * 0.5 : 0;
+
   // 시간 포맷팅
   const formatTime = (minutes: number) => {
     if (minutes < 60) return `${minutes}분`;
@@ -129,7 +132,15 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-between px-4 py-8">
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-between px-4 py-8 relative">
+      {/* 연기 오버레이 */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
+        style={{
+          backgroundColor: `rgba(80, 60, 40, ${smokeOpacity})`,
+          backdropFilter: smokeOpacity > 0 ? `blur(${smokeOpacity * 2}px)` : 'none'
+        }}
+      />
       {/* 헤더 */}
       <header className="text-center">
         <h1 className="text-3xl font-bold text-white tracking-wider mb-2">
