@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Cigarette from './components/Cigarette';
 import { useFirebase } from './hooks/useFirebase';
+import { getTossShareLink, share } from '@apps-in-toss/web-framework';
 
 // 상수
 const PRICE_PER_CIGARETTE = 225; // 원
@@ -13,6 +14,8 @@ function App() {
   const [burnLevel, setBurnLevel] = useState(0);
   const [isBurning, setIsBurning] = useState(false);
   const [isAutoMode, setIsAutoMode] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showPatchNotes, setShowPatchNotes] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
@@ -27,6 +30,29 @@ function App() {
 
   // 화면 탁해지는 효과 (담배 피우는 동안 점점 탁해짐)
   const smokeOpacity = isBurning ? (burnLevel / 100) * 0.5 : 0;
+
+  // 공유 기능
+  const handleShare = async () => {
+    const shareText = `🚬 SMOKE TRACE - 담배 한 개비가 남기는 흔적\n오늘 ${cigaretteCount}개비 피워서 ₩${moneySpent.toLocaleString()} 태웠습니다.`;
+    try {
+      const tossLink = await getTossShareLink('intoss://smoketrace');
+      await share({ message: `${shareText}\n${tossLink}` });
+    } catch {
+      // 토스 환경이 아닌 경우
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'SMOKE TRACE',
+            text: shareText,
+            url: window.location.href,
+          });
+        } catch {}
+      } else {
+        await navigator.clipboard.writeText(`${shareText}\n${window.location.href}`);
+        alert('링크가 복사되었습니다!');
+      }
+    }
+  };
 
   // 시간 포맷팅
   const formatTime = (minutes: number) => {
@@ -151,6 +177,52 @@ function App() {
           backdropFilter: smokeOpacity > 0 ? `blur(${smokeOpacity * 2}px)` : 'none'
         }}
       />
+
+      {/* 좌측 상단 버튼들 */}
+      <div className="absolute top-4 left-4 flex gap-2 z-10">
+        {/* 메뉴 버튼 */}
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shadow-md hover:bg-white/20 transition-all active:scale-95"
+            aria-label="메뉴"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+            </svg>
+          </button>
+
+          {/* 드롭다운 메뉴 */}
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+              <div className="absolute left-0 mt-2 w-44 bg-gray-900/95 rounded-xl shadow-xl z-20 overflow-hidden">
+                <button
+                  className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/10 transition-colors w-full"
+                  onClick={() => { setMenuOpen(false); setShowPatchNotes(true); }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-sm">패치노트</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* 공유 버튼 */}
+        <button
+          onClick={handleShare}
+          className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shadow-md hover:bg-white/20 transition-all active:scale-95"
+          aria-label="공유"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+        </button>
+      </div>
+
       {/* 헤더 */}
       <header className="text-center">
         <h1 className="text-3xl font-bold text-white tracking-wider mb-2">
@@ -219,6 +291,36 @@ function App() {
           © 2026 JO YEONG CHAN. All rights reserved.
         </p>
       </div>
+
+      {/* 패치노트 모달 */}
+      {showPatchNotes && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-6" onClick={() => setShowPatchNotes(false)}>
+          <div className="bg-[#1a1a1a] rounded-2xl w-[320px] max-h-[70vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* 헤더 */}
+            <div className="bg-orange-500 px-5 py-4 flex justify-between items-center">
+              <h2 className="text-white font-bold">패치노트</h2>
+              <button onClick={() => setShowPatchNotes(false)} className="text-white/80 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* 콘텐츠 */}
+            <div className="p-5 overflow-y-auto max-h-[55vh]">
+              <p className="text-orange-500 font-semibold text-sm mb-3">2026.01.20</p>
+              <ul className="text-gray-300 text-sm space-y-2">
+                <li>• SMOKE TRACE 최초 출시</li>
+                <li>• 담배 피우기 시뮬레이션</li>
+                <li>• 실시간 연기 파티클 효과</li>
+                <li>• 개인/전체 통계 기능</li>
+                <li>• Firebase 실시간 연동</li>
+                <li>• 더블클릭 자동 모드</li>
+                <li>• 화면 탁해지는 효과</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
