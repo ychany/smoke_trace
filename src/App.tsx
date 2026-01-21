@@ -142,7 +142,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-between px-4 py-8 relative">
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-8 px-4 py-8 relative">
       {/* 연기 오버레이 */}
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
