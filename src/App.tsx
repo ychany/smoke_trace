@@ -105,55 +105,62 @@ function App() {
     }
   }, [burnLevel, addCigarette]);
 
-  // 마지막 터치 시간 (더블탭 감지용)
+  // 마지막 탭 시간 (더블탭 감지용)
   const lastTapTimeRef = useRef(0);
+  const isTouchDeviceRef = useRef(false);
 
-  // 클릭/터치 핸들러 (더블클릭/더블탭 감지 포함)
-  const handlePointerDown = (e: React.TouchEvent | React.MouseEvent) => {
-    // 터치 이벤트일 때 마우스 이벤트 무시
-    if (e.type === 'mousedown' && lastTapTimeRef.current > Date.now() - 500) {
-      return;
-    }
+  // 터치 시작
+  const handleTouchStart = () => {
+    isTouchDeviceRef.current = true;
+    handleTap();
+  };
 
+  // 마우스 다운 (터치 기기가 아닐 때만)
+  const handleMouseDown = () => {
+    if (isTouchDeviceRef.current) return;
+    handleTap();
+  };
+
+  // 공통 탭/클릭 처리
+  const handleTap = () => {
     isMouseDownRef.current = true;
 
     // 자동 모드일 때는 아무 클릭이나 중지
     if (isAutoMode) {
       setIsAutoMode(false);
       setIsBurning(false);
-      clickCountRef.current = 0;
       if (clickTimerRef.current) {
         clearTimeout(clickTimerRef.current);
         clickTimerRef.current = null;
       }
+      lastTapTimeRef.current = 0;
       return;
     }
 
     const now = Date.now();
+    const timeSinceLastTap = now - lastTapTimeRef.current;
 
-    // 더블탭 감지 (300ms 이내)
-    if (now - lastTapTimeRef.current < 300) {
+    // 더블탭 감지 (400ms 이내)
+    if (timeSinceLastTap < 400 && timeSinceLastTap > 50) {
       // 더블탭/더블클릭
       if (clickTimerRef.current) {
         clearTimeout(clickTimerRef.current);
         clickTimerRef.current = null;
       }
-      clickCountRef.current = 0;
       lastTapTimeRef.current = 0;
 
       // 자동 모드 시작
       setIsAutoMode(true);
       setIsBurning(true);
     } else {
-      // 첫 번째 탭 - 300ms 후 싱글 탭으로 처리
+      // 첫 번째 탭
       lastTapTimeRef.current = now;
       clickTimerRef.current = window.setTimeout(() => {
-        clickCountRef.current = 0;
         // 손가락/마우스가 아직 눌려있을 때만 피우기 시작
         if (!isAutoMode && isMouseDownRef.current) {
           setIsBurning(true);
         }
-      }, 300);
+      }, 400);
     }
   };
 
@@ -284,10 +291,10 @@ function App() {
 
         {/* 버튼 */}
         <button
-          onMouseDown={handlePointerDown}
+          onMouseDown={handleMouseDown}
           onMouseUp={stopSmoking}
           onMouseLeave={stopSmoking}
-          onTouchStart={handlePointerDown}
+          onTouchStart={handleTouchStart}
           onTouchEnd={stopSmoking}
           className={`w-full py-4 px-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-lg transition-all transform hover:scale-105 active:scale-95 select-none ${isBurning ? 'ring-2 ring-orange-400 ring-opacity-50' : ''}`}
         >
