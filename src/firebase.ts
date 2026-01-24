@@ -80,8 +80,15 @@ export const incrementCigaretteCount = async () => {
 // 실시간 통계 구독
 export const subscribeToStats = (callback: (stats: { todayCount: number; totalCount: number }) => void) => {
   return onValue(statsRef, (snapshot) => {
-    const stats = snapshot.val() || { todayCount: 0, totalCount: 0 };
-    callback(stats);
+    const stats = snapshot.val() || { todayCount: 0, totalCount: 0, lastDate: '' };
+    const today = new Date().toISOString().split('T')[0];
+
+    // 날짜가 다르면 todayCount는 0으로 표시
+    if (stats.lastDate !== today) {
+      callback({ todayCount: 0, totalCount: stats.totalCount || 0 });
+    } else {
+      callback({ todayCount: stats.todayCount || 0, totalCount: stats.totalCount || 0 });
+    }
   });
 };
 
