@@ -21,7 +21,7 @@ function App() {
   const clickTimerRef = useRef<number | null>(null);
   const isMouseDownRef = useRef(false);
 
-  // Firebase 연동
+  // Firebase 연동1
   const { stats, activeUsers, setSmokingStatus, addCigarette } = useFirebase();
 
   // 통계 계산
