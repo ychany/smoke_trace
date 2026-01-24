@@ -105,8 +105,16 @@ function App() {
     }
   }, [burnLevel, addCigarette]);
 
-  // 클릭 핸들러 (더블클릭 감지 포함)
-  const handleMouseDown = () => {
+  // 마지막 터치 시간 (더블탭 감지용)
+  const lastTapTimeRef = useRef(0);
+
+  // 클릭/터치 핸들러 (더블클릭/더블탭 감지 포함)
+  const handlePointerDown = (e: React.TouchEvent | React.MouseEvent) => {
+    // 터치 이벤트일 때 마우스 이벤트 무시
+    if (e.type === 'mousedown' && lastTapTimeRef.current > Date.now() - 500) {
+      return;
+    }
+
     isMouseDownRef.current = true;
 
     // 자동 모드일 때는 아무 클릭이나 중지
@@ -121,28 +129,31 @@ function App() {
       return;
     }
 
-    clickCountRef.current += 1;
+    const now = Date.now();
 
-    if (clickCountRef.current === 1) {
-      // 첫 번째 클릭 - 200ms 내에 두 번째 클릭이 오는지 확인
-      clickTimerRef.current = window.setTimeout(() => {
-        // 싱글 클릭으로 처리
-        clickCountRef.current = 0;
-        // 마우스가 아직 눌려있을 때만 피우기 시작
-        if (!isAutoMode && isMouseDownRef.current) {
-          setIsBurning(true);
-        }
-      }, 200);
-    } else if (clickCountRef.current === 2) {
-      // 더블클릭
+    // 더블탭 감지 (300ms 이내)
+    if (now - lastTapTimeRef.current < 300) {
+      // 더블탭/더블클릭
       if (clickTimerRef.current) {
         clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
       }
       clickCountRef.current = 0;
+      lastTapTimeRef.current = 0;
 
       // 자동 모드 시작
       setIsAutoMode(true);
       setIsBurning(true);
+    } else {
+      // 첫 번째 탭 - 300ms 후 싱글 탭으로 처리
+      lastTapTimeRef.current = now;
+      clickTimerRef.current = window.setTimeout(() => {
+        clickCountRef.current = 0;
+        // 손가락/마우스가 아직 눌려있을 때만 피우기 시작
+        if (!isAutoMode && isMouseDownRef.current) {
+          setIsBurning(true);
+        }
+      }, 300);
     }
   };
 
@@ -235,7 +246,7 @@ function App() {
       <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <span className={`w-2 h-2 rounded-full ${activeUsers.smoking > 0 ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`}></span>
-          {activeUsers.smoking > 0 ? `${activeUsers.smoking}명 피우는 중` : `${activeUsers.total}명 접속 중`}
+          {activeUsers.total}명 피우는 중
         </span>
         <span>|</span>
         <span>오늘 {stats.todayCount.toLocaleString()}개비</span>
@@ -273,10 +284,10 @@ function App() {
 
         {/* 버튼 */}
         <button
-          onMouseDown={handleMouseDown}
+          onMouseDown={handlePointerDown}
           onMouseUp={stopSmoking}
           onMouseLeave={stopSmoking}
-          onTouchStart={handleMouseDown}
+          onTouchStart={handlePointerDown}
           onTouchEnd={stopSmoking}
           className={`w-full py-4 px-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-lg transition-all transform hover:scale-105 active:scale-95 select-none ${isBurning ? 'ring-2 ring-orange-400 ring-opacity-50' : ''}`}
         >
