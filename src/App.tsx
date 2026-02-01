@@ -1,8 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Cigarette from './components/Cigarette';
 import SmokingCompleteModal from './components/SmokingCompleteModal';
 import { useFirebase } from './hooks/useFirebase';
-import { getTossShareLink, share } from '@apps-in-toss/web-framework';
+import { getTossShareLink, share, loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework';
+
+// 광고 그룹 ID
+const AD_GROUP_ID = 'ait.v2.live.a5a8926d9a4d4e1a';
 
 // 상수
 const PRICE_PER_CIGARETTE = 225; // 원
@@ -16,15 +19,15 @@ function App() {
   const [isBurning, setIsBurning] = useState(false);
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showPatchNotes, setShowPatchNotes] = useState(false);
+  const [showDailyStats, setShowDailyStats] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
   const isMouseDownRef = useRef(false);
 
-  // Firebase 연동1
-  const { stats, activeUsers, setSmokingStatus, addCigarette } = useFirebase();
+  // Firebase 연동
+  const { stats, activeUsers, dailyStats, setSmokingStatus, addCigarette } = useFirebase();
 
   // 통계 계산
   const moneySpent = cigaretteCount * PRICE_PER_CIGARETTE;
@@ -35,6 +38,55 @@ function App() {
 
   // 토스트 메시지
   const [showToast, setShowToast] = useState(false);
+
+  // 광고 로드 상태
+  const adLoadedRef = useRef(false);
+
+  // 광고 미리 로드
+  const preloadAd = useCallback(() => {
+    if (loadFullScreenAd.isSupported()) {
+      loadFullScreenAd({
+        options: { adGroupId: AD_GROUP_ID },
+        onEvent: (event) => {
+          if (event.type === 'loaded') {
+            adLoadedRef.current = true;
+          }
+        },
+        onError: () => {
+          adLoadedRef.current = false;
+        }
+      });
+    }
+  }, []);
+
+  // 광고 표시
+  const showAd = useCallback((onComplete: () => void) => {
+    if (showFullScreenAd.isSupported() && adLoadedRef.current) {
+      showFullScreenAd({
+        options: { adGroupId: AD_GROUP_ID },
+        onEvent: (event) => {
+          if (event.type === 'dismissed') {
+            adLoadedRef.current = false;
+            preloadAd(); // 다음 광고 미리 로드
+            onComplete();
+          }
+        },
+        onError: () => {
+          adLoadedRef.current = false;
+          preloadAd();
+          onComplete();
+        }
+      });
+    } else {
+      // 앱인토스 환경이 아니거나 광고 로드 안됨
+      onComplete();
+    }
+  }, [preloadAd]);
+
+  // 앱 시작 시 광고 미리 로드
+  useEffect(() => {
+    preloadAd();
+  }, [preloadAd]);
 
   // 공유 기능
   const handleShare = async () => {
@@ -111,9 +163,15 @@ function App() {
       setBurnLevel(0);
       setIsAutoMode(false); // 자동 모드 중지
       setIsBurning(false); // 피우기 중지
-      setShowCompleteModal(true); // 완료 모달 표시
+
+      // 잠시 대기 후 광고 표시, 광고 끝나면 완료 모달
+      setTimeout(() => {
+        showAd(() => {
+          setShowCompleteModal(true);
+        });
+      }, 500);
     }
-  }, [burnLevel, addCigarette]);
+  }, [burnLevel, addCigarette, showAd]);
 
   // 마지막 탭 시간 (더블탭 감지용)
   const lastTapTimeRef = useRef(0);
@@ -227,12 +285,12 @@ function App() {
               <div className="absolute left-0 mt-2 w-44 bg-gray-900/95 rounded-xl shadow-xl z-20 overflow-hidden">
                 <button
                   className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/10 transition-colors w-full"
-                  onClick={() => { setMenuOpen(false); setShowPatchNotes(true); }}
+                  onClick={() => { setMenuOpen(false); setShowDailyStats(true); }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
-                  <span className="text-sm">패치노트</span>
+                  <span className="text-sm">일별 통계</span>
                 </button>
               </div>
             </>
@@ -331,14 +389,14 @@ function App() {
         formatTime={formatTime}
       />
 
-      {/* 패치노트 모달 */}
-      {showPatchNotes && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-6" onClick={() => setShowPatchNotes(false)}>
+      {/* 일별 통계 모달 */}
+      {showDailyStats && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-6" onClick={() => setShowDailyStats(false)}>
           <div className="bg-[#1a1a1a] rounded-2xl w-[320px] max-h-[70vh] overflow-hidden" onClick={e => e.stopPropagation()}>
             {/* 헤더 */}
             <div className="bg-orange-500 px-5 py-4 flex justify-between items-center">
-              <h2 className="text-white font-bold">패치노트</h2>
-              <button onClick={() => setShowPatchNotes(false)} className="text-white/80 hover:text-white">
+              <h2 className="text-white font-bold">일별 통계</h2>
+              <button onClick={() => setShowDailyStats(false)} className="text-white/80 hover:text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -346,16 +404,25 @@ function App() {
             </div>
             {/* 콘텐츠 */}
             <div className="p-5 overflow-y-auto max-h-[55vh]">
-              <p className="text-orange-500 font-semibold text-sm mb-3">2026.01.20</p>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li>• SMOKE TRACE 최초 출시</li>
-                <li>• 담배 피우기 시뮬레이션</li>
-                <li>• 실시간 연기 파티클 효과</li>
-                <li>• 개인/전체 통계 기능</li>
-                <li>• Firebase 실시간 연동</li>
-                <li>• 더블클릭 자동 모드</li>
-                <li>• 화면 탁해지는 효과</li>
-              </ul>
+              <p className="text-gray-400 text-xs mb-4">전체 이용자 기준</p>
+              <div className="space-y-3">
+                {dailyStats.map((stat) => {
+                  const date = new Date(stat.date);
+                  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                  const isToday = stat.date === new Date().toISOString().split('T')[0];
+                  return (
+                    <div key={stat.date} className="flex justify-between items-center">
+                      <span className={`text-sm ${isToday ? 'text-orange-500 font-semibold' : 'text-gray-400'}`}>
+                        {date.getMonth() + 1}/{date.getDate()} ({dayNames[date.getDay()]})
+                        {isToday && ' 오늘'}
+                      </span>
+                      <span className={`font-bold ${isToday ? 'text-orange-500' : 'text-white'}`}>
+                        {stat.count.toLocaleString()}개비
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

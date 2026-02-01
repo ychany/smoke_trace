@@ -5,6 +5,7 @@ import {
   incrementCigaretteCount,
   subscribeToStats,
   subscribeToActiveUsers,
+  subscribeToDailyStats,
   userRef
 } from '../firebase';
 import { set, serverTimestamp } from 'firebase/database';
@@ -19,9 +20,15 @@ interface ActiveUsers {
   smoking: number;
 }
 
+interface DailyStat {
+  date: string;
+  count: number;
+}
+
 export function useFirebase() {
   const [stats, setStats] = useState<Stats>({ todayCount: 0, totalCount: 0 });
   const [activeUsers, setActiveUsers] = useState<ActiveUsers>({ total: 0, smoking: 0 });
+  const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const heartbeatRef = useRef<number | null>(null);
 
@@ -49,6 +56,11 @@ export function useFirebase() {
       setActiveUsers({ total, smoking });
     });
 
+    // 일별 통계 구독
+    const unsubDaily = subscribeToDailyStats((daily) => {
+      setDailyStats(daily);
+    });
+
     // 정리
     return () => {
       if (heartbeatRef.current) {
@@ -56,6 +68,7 @@ export function useFirebase() {
       }
       unsubStats();
       unsubUsers();
+      unsubDaily();
     };
   }, []);
 
@@ -72,6 +85,7 @@ export function useFirebase() {
   return {
     stats,
     activeUsers,
+    dailyStats,
     isConnected,
     setSmokingStatus,
     addCigarette
