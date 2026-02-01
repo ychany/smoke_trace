@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Cigarette from './components/Cigarette';
 import SmokingCompleteModal from './components/SmokingCompleteModal';
+import DailyStatsModal from './components/DailyStatsModal';
 import { useFirebase } from './hooks/useFirebase';
 import { useAd } from './hooks/useAd';
 import { getTossShareLink, share } from '@apps-in-toss/web-framework';
@@ -359,43 +360,11 @@ function App() {
       />
 
       {/* 일별 통계 모달 */}
-      {showDailyStats && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-6" onClick={() => setShowDailyStats(false)}>
-          <div className="bg-[#1a1a1a] rounded-2xl w-[320px] max-h-[70vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-            {/* 헤더 */}
-            <div className="bg-orange-500 px-5 py-4 flex justify-between items-center">
-              <h2 className="text-white font-bold">일별 통계</h2>
-              <button onClick={() => setShowDailyStats(false)} className="text-white/80 hover:text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {/* 콘텐츠 */}
-            <div className="p-5 overflow-y-auto max-h-[55vh]">
-              <p className="text-gray-400 text-xs mb-4">전체 이용자 기준</p>
-              <div className="space-y-3">
-                {dailyStats.map((stat) => {
-                  const date = new Date(stat.date);
-                  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-                  const isToday = stat.date === new Date().toISOString().split('T')[0];
-                  return (
-                    <div key={stat.date} className="flex justify-between items-center">
-                      <span className={`text-sm ${isToday ? 'text-orange-500 font-semibold' : 'text-gray-400'}`}>
-                        {date.getMonth() + 1}/{date.getDate()} ({dayNames[date.getDay()]})
-                        {isToday && ' 오늘'}
-                      </span>
-                      <span className={`font-bold ${isToday ? 'text-orange-500' : 'text-white'}`}>
-                        {stat.count.toLocaleString()}개비
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DailyStatsModal
+        isOpen={showDailyStats}
+        onClose={() => setShowDailyStats(false)}
+        dailyStats={dailyStats}
+      />
 
       {/* 광고 안내 화면 */}
       {showAdNotice && (
