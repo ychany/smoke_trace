@@ -9,13 +9,17 @@
 - 담배 피우기 시뮬레이션 (꾹 누르기 / 더블클릭 자동 모드)
 - 실시간 연기 파티클 효과
 - 개인 통계: 피운 개비, 태운 돈, 줄어든 수명
-- 실시간 전체 통계: 동시 접속자, 흡연 중인 사용자, 오늘/누적 개비 수
+- 실시간 전체 통계: 동시 접속자, 오늘/누적 개비 수
+- 일별 통계 모달
+- 공유 기능 (토스/웹)
+- 앱인토스 광고 지원
 
 ## 기술 스택
 
 - React + TypeScript + Vite
-- Tailwind CSS
+- Tailwind CSS + Framer Motion
 - Firebase Realtime Database
+- Apps in Toss SDK (@apps-in-toss/web-framework)
 - Vercel (배포)
 
 ## 설치 및 실행
@@ -29,6 +33,9 @@ npm run dev
 
 # 프로덕션 빌드
 npm run build
+
+# 앱인토스 빌드 (.ait 파일 생성)
+npm run build:ait
 ```
 
 ## Firebase 보안 규칙
@@ -36,22 +43,19 @@ npm run build
 ```json
 {
   "rules": {
-    "stats": {
-      ".read": true,
-      ".write": true,
-      ".validate": "newData.hasChildren(['todayCount', 'totalCount', 'lastDate'])",
-      "todayCount": { ".validate": "newData.isNumber() && newData.val() >= 0" },
-      "totalCount": { ".validate": "newData.isNumber() && newData.val() >= 0" },
-      "lastDate": { ".validate": "newData.isString()" }
-    },
     "activeUsers": {
       ".read": true,
-      "$userId": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['timestamp', 'isSmoking'])",
-        "timestamp": { ".validate": "newData.val() <= now" },
-        "isSmoking": { ".validate": "newData.isBoolean()" }
+      "$uid": {
+        ".write": true
       }
+    },
+    "stats": {
+      ".read": true,
+      ".write": true
+    },
+    "dailyStats": {
+      ".read": true,
+      ".write": true
     }
   }
 }
@@ -68,4 +72,4 @@ npm run build
 
 - 담배 1개비 = 225원
 - 담배 1개비 = 수명 11분 감소
-
+- 시간대: 한국 표준시(KST) 기준
