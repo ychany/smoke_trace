@@ -9,7 +9,7 @@ import { getTossShareLink, share } from '@apps-in-toss/web-framework';
 // 상수
 const PRICE_PER_CIGARETTE = 225; // 원
 const MINUTES_LOST_PER_CIGARETTE = 11; // 분
-const BURN_INTERVAL = 150; // ms - 누르고 있을 때 타는 속도
+const BURN_INTERVAL = 120; // ms - 누르고 있을 때 타는 속도
 const BURN_AMOUNT = 1; // 한 번에 타는 양 (15초 = 100번 x 150ms)
 
 function App() {
