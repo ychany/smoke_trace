@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:ait": "tsc -b && vite build && cd dist && zip -r ../smoke_trace.ait .",
     "lint": "eslint .",
     "preview": "vite preview"
   },
