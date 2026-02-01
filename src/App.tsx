@@ -33,11 +33,15 @@ function App() {
   // 화면 탁해지는 효과 (담배 피우는 동안 점점 탁해짐)
   const smokeOpacity = isBurning ? (burnLevel / 100) * 0.5 : 0;
 
+  // 토스트 메시지
+  const [showToast, setShowToast] = useState(false);
+
   // 공유 기능
   const handleShare = async () => {
+    const shareUrl = 'https://smoketrace.vercel.app';
     const shareText = `🚬 SMOKE TRACE - 담배 한 개비가 남기는 흔적\n오늘 ${cigaretteCount}개비 피워서 ₩${moneySpent.toLocaleString()} 태웠습니다.`;
     try {
-      const tossLink = await getTossShareLink('intoss://smoketrace');
+      const tossLink = await getTossShareLink(shareUrl);
       await share({ message: `${shareText}\n${tossLink}` });
     } catch {
       // 토스 환경이 아닌 경우
@@ -46,12 +50,13 @@ function App() {
           await navigator.share({
             title: 'SMOKE TRACE',
             text: shareText,
-            url: window.location.href,
+            url: shareUrl,
           });
         } catch { }
       } else {
-        await navigator.clipboard.writeText(`${shareText}\n${window.location.href}`);
-        alert('링크가 복사되었습니다!');
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
       }
     }
   };
@@ -353,6 +358,13 @@ function App() {
               </ul>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 토스트 메시지 */}
+      {showToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-[#2c2c2e] text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg z-50">
+          링크가 복사되었습니다
         </div>
       )}
     </div>

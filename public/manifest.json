@@ -1,0 +1,16 @@
+{
+  "name": "SMOKE TRACE",
+  "short_name": "SMOKE TRACE",
+  "description": "담배 한 개비가 남기는 흔적을 시각화하는 교육용 웹앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/smoke_trace.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
