@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Cigarette from './components/Cigarette';
 import SmokingCompleteModal from './components/SmokingCompleteModal';
 import { useFirebase } from './hooks/useFirebase';
-import { getTossShareLink, share, loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework';
-
-// 광고 그룹 ID
-const AD_GROUP_ID = 'ait.v2.live.a5a8926d9a4d4e1a';
+import { useAd } from './hooks/useAd';
+import { getTossShareLink, share } from '@apps-in-toss/web-framework';
 
 // 상수
 const PRICE_PER_CIGARETTE = 225; // 원
@@ -21,6 +19,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDailyStats, setShowDailyStats] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showAdNotice, setShowAdNotice] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
@@ -39,54 +38,13 @@ function App() {
   // 토스트 메시지
   const [showToast, setShowToast] = useState(false);
 
-  // 광고 로드 상태
-  const adLoadedRef = useRef(false);
-
-  // 광고 미리 로드
-  const preloadAd = useCallback(() => {
-    if (loadFullScreenAd.isSupported()) {
-      loadFullScreenAd({
-        options: { adGroupId: AD_GROUP_ID },
-        onEvent: (event) => {
-          if (event.type === 'loaded') {
-            adLoadedRef.current = true;
-          }
-        },
-        onError: () => {
-          adLoadedRef.current = false;
-        }
-      });
-    }
-  }, []);
-
-  // 광고 표시
-  const showAd = useCallback((onComplete: () => void) => {
-    if (showFullScreenAd.isSupported() && adLoadedRef.current) {
-      showFullScreenAd({
-        options: { adGroupId: AD_GROUP_ID },
-        onEvent: (event) => {
-          if (event.type === 'dismissed') {
-            adLoadedRef.current = false;
-            preloadAd(); // 다음 광고 미리 로드
-            onComplete();
-          }
-        },
-        onError: () => {
-          adLoadedRef.current = false;
-          preloadAd();
-          onComplete();
-        }
-      });
-    } else {
-      // 앱인토스 환경이 아니거나 광고 로드 안됨
-      onComplete();
-    }
-  }, [preloadAd]);
+  // 광고 훅
+  const { loadAd, showAd, isAdSupported } = useAd();
 
   // 앱 시작 시 광고 미리 로드
   useEffect(() => {
-    preloadAd();
-  }, [preloadAd]);
+    loadAd();
+  }, [loadAd]);
 
   // 공유 기능
   const handleShare = async () => {
@@ -164,14 +122,25 @@ function App() {
       setIsAutoMode(false); // 자동 모드 중지
       setIsBurning(false); // 피우기 중지
 
-      // 잠시 대기 후 광고 표시, 광고 끝나면 완료 모달
+      // 0.3초 대기 후 광고 안내 → 1.5초 후 광고 → 완료 모달
       setTimeout(() => {
-        showAd(() => {
+        if (isAdSupported) {
+          // 앱인토스: 광고 안내 → 광고 → 완료 모달
+          setShowAdNotice(true);
+          setTimeout(() => {
+            setShowAdNotice(false);
+            showAd(() => {
+              setShowCompleteModal(true);
+              loadAd(); // 다음 광고 미리 로드
+            });
+          }, 1500);
+        } else {
+          // 웹: 바로 완료 모달
           setShowCompleteModal(true);
-        });
-      }, 500);
+        }
+      }, 300);
     }
-  }, [burnLevel, addCigarette, showAd]);
+  }, [burnLevel, addCigarette, showAd, isAdSupported, loadAd]);
 
   // 마지막 탭 시간 (더블탭 감지용)
   const lastTapTimeRef = useRef(0);
@@ -424,6 +393,17 @@ function App() {
                 })}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 광고 안내 화면 */}
+      {showAdNotice && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="text-center text-white">
+            <div className="text-5xl mb-4">🚬</div>
+            <p className="text-lg font-medium">담배 한 개비 완료!</p>
+            <p className="text-gray-400 text-sm mt-2">잠시 후 광고가 표시됩니다</p>
           </div>
         </div>
       )}
