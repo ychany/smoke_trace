@@ -22,12 +22,11 @@ function App() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showAdNotice, setShowAdNotice] = useState(false);
   const intervalRef = useRef<number | null>(null);
-  const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
   const isMouseDownRef = useRef(false);
 
   // Firebase 연동
-  const { stats, activeUsers, dailyStats, setSmokingStatus, addCigarette } = useFirebase();
+  const { stats, activeUsers, dailyStats, addCigarette } = useFirebase();
 
   // 통계 계산
   const moneySpent = cigaretteCount * PRICE_PER_CIGARETTE;
@@ -108,11 +107,6 @@ function App() {
       }
     };
   }, [isBurning]);
-
-  // 흡연 상태 Firebase에 업데이트
-  useEffect(() => {
-    setSmokingStatus(isBurning);
-  }, [isBurning, setSmokingStatus]);
 
   // 담배가 다 타면 카운트 증가 및 리셋
   useEffect(() => {
@@ -205,7 +199,7 @@ function App() {
   // 누르기 끝
   const stopSmoking = () => {
     isMouseDownRef.current = false;
-    if (!isAutoMode && clickCountRef.current === 0) {
+    if (!isAutoMode) {
       setIsBurning(false);
     }
   };
@@ -331,7 +325,7 @@ function App() {
       {/* 실시간 통계 */}
       <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
-          <span className={`w-2 h-2 rounded-full ${activeUsers.smoking > 0 ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`}></span>
+          <span className="w-2 h-2 rounded-full bg-green-500"></span>
           {activeUsers.total}명 피우는 중
         </span>
         <span>|</span>

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   registerPresence,
-  updateSmokingStatus,
   incrementCigaretteCount,
   subscribeToStats,
   subscribeToActiveUsers,
@@ -17,7 +16,6 @@ interface Stats {
 
 interface ActiveUsers {
   total: number;
-  smoking: number;
 }
 
 interface DailyStat {
@@ -27,7 +25,7 @@ interface DailyStat {
 
 export function useFirebase() {
   const [stats, setStats] = useState<Stats>({ todayCount: 0, totalCount: 0 });
-  const [activeUsers, setActiveUsers] = useState<ActiveUsers>({ total: 0, smoking: 0 });
+  const [activeUsers, setActiveUsers] = useState<ActiveUsers>({ total: 0 });
   const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const heartbeatRef = useRef<number | null>(null);
@@ -38,13 +36,17 @@ export function useFirebase() {
     registerPresence();
     setIsConnected(true);
 
-    // Heartbeat - 10초마다 타임스탬프 갱신
+    // 즉시 타임스탬프 갱신 (초기 접속 시)
+    set(userRef, {
+      timestamp: serverTimestamp()
+    });
+
+    // Heartbeat - 15초마다 타임스탬프 갱신
     heartbeatRef.current = window.setInterval(() => {
       set(userRef, {
-        timestamp: serverTimestamp(),
-        isSmoking: false
+        timestamp: serverTimestamp()
       });
-    }, 10000);
+    }, 15000);
 
     // 통계 구독
     const unsubStats = subscribeToStats((newStats) => {
@@ -52,8 +54,8 @@ export function useFirebase() {
     });
 
     // 활성 사용자 구독
-    const unsubUsers = subscribeToActiveUsers((total, smoking) => {
-      setActiveUsers({ total, smoking });
+    const unsubUsers = subscribeToActiveUsers((total) => {
+      setActiveUsers({ total });
     });
 
     // 일별 통계 구독
@@ -72,11 +74,6 @@ export function useFirebase() {
     };
   }, []);
 
-  // 흡연 상태 업데이트
-  const setSmokingStatus = (isSmoking: boolean) => {
-    updateSmokingStatus(isSmoking);
-  };
-
   // 담배 다 피웠을 때 카운트 증가
   const addCigarette = () => {
     incrementCigaretteCount();
@@ -87,7 +84,6 @@ export function useFirebase() {
     activeUsers,
     dailyStats,
     isConnected,
-    setSmokingStatus,
     addCigarette
   };
 }

@@ -36,22 +36,10 @@ export const userRef = ref(db, `activeUsers/${userId}`);
 
 // 접속 등록 및 해제
 export const registerPresence = () => {
-  // 현재 접속 등록
   set(userRef, {
-    timestamp: serverTimestamp(),
-    isSmoking: false
+    timestamp: serverTimestamp()
   });
-
-  // 연결 해제 시 자동 삭제
   onDisconnect(userRef).remove();
-};
-
-// 흡연 상태 업데이트
-export const updateSmokingStatus = (isSmoking: boolean) => {
-  set(userRef, {
-    timestamp: serverTimestamp(),
-    isSmoking
-  });
 };
 
 // 한국 시간(KST) 기준 오늘 날짜 가져오기
@@ -111,24 +99,10 @@ export const subscribeToStats = (callback: (stats: { todayCount: number; totalCo
 };
 
 // 실시간 활성 사용자 구독
-export const subscribeToActiveUsers = (callback: (count: number, smokingCount: number) => void) => {
+export const subscribeToActiveUsers = (callback: (count: number) => void) => {
   return onValue(activeUsersRef, (snapshot) => {
     const users = snapshot.val() || {};
-    const now = Date.now();
-    let activeCount = 0;
-    let smokingCount = 0;
-
-    Object.values(users).forEach((user: any) => {
-      // 30초 이내 활동한 사용자만 카운트
-      if (user.timestamp && (now - user.timestamp) < 30000) {
-        activeCount++;
-        if (user.isSmoking) {
-          smokingCount++;
-        }
-      }
-    });
-
-    callback(activeCount, smokingCount);
+    callback(Object.keys(users).length);
   });
 };
 
