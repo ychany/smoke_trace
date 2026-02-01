@@ -8,10 +8,23 @@ interface DailyStatsModalProps {
     dailyStats: Array<{ date: string; count: number }>;
 }
 
+// 한국 시간(KST) 기준 오늘 날짜
+const getKSTDate = () => {
+    const now = new Date();
+    const kstOffset = 9 * 60;
+    const kstTime = new Date(now.getTime() + (kstOffset + now.getTimezoneOffset()) * 60000);
+    const year = kstTime.getFullYear();
+    const month = String(kstTime.getMonth() + 1).padStart(2, '0');
+    const day = String(kstTime.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const DailyStatsModal = ({ isOpen, onClose, dailyStats }: DailyStatsModalProps) => {
     const totalCount = useMemo(() => {
         return dailyStats.reduce((acc, curr) => acc + curr.count, 0);
     }, [dailyStats]);
+
+    const todayKST = getKSTDate();
 
     if (!isOpen) return null;
 
@@ -150,7 +163,7 @@ const DailyStatsModal = ({ isOpen, onClose, dailyStats }: DailyStatsModalProps) 
                                 const day = date.getDate();
                                 const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
                                 const dayName = dayNames[date.getDay()];
-                                const isToday = stat.date === new Date().toISOString().split('T')[0];
+                                const isToday = stat.date === todayKST;
 
                                 return (
                                     <div

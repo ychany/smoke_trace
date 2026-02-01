@@ -54,9 +54,20 @@ export const updateSmokingStatus = (isSmoking: boolean) => {
   });
 };
 
+// 한국 시간(KST) 기준 오늘 날짜 가져오기
+const getKSTDate = () => {
+  const now = new Date();
+  const kstOffset = 9 * 60; // KST는 UTC+9
+  const kstTime = new Date(now.getTime() + (kstOffset + now.getTimezoneOffset()) * 60000);
+  const year = kstTime.getFullYear();
+  const month = String(kstTime.getMonth() + 1).padStart(2, '0');
+  const day = String(kstTime.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // 담배 카운트 증가
 export const incrementCigaretteCount = async () => {
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const today = getKSTDate(); // YYYY-MM-DD (KST)
 
   // 현재 통계 가져오기
   const snapshot = await get(statsRef);
@@ -88,7 +99,7 @@ export const incrementCigaretteCount = async () => {
 export const subscribeToStats = (callback: (stats: { todayCount: number; totalCount: number }) => void) => {
   return onValue(statsRef, (snapshot) => {
     const stats = snapshot.val() || { todayCount: 0, totalCount: 0, lastDate: '' };
-    const today = new Date().toISOString().split('T')[0];
+    const today = getKSTDate();
 
     // 날짜가 다르면 todayCount는 0으로 표시
     if (stats.lastDate !== today) {
@@ -128,10 +139,9 @@ export const subscribeToDailyStats = (callback: (dailyStats: { date: string; cou
     const result: { date: string; count: number }[] = [];
 
     // 시작일: 2026-02-01
-    const startDate = new Date('2026-02-01');
-    startDate.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startDate = new Date('2026-02-01T00:00:00+09:00');
+    const todayStr = getKSTDate();
+    const today = new Date(todayStr + 'T00:00:00+09:00');
 
     // 오늘부터 시작일까지 모든 날짜 (최신순)
     const currentDate = new Date(today);
