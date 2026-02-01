@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Cigarette from './components/Cigarette';
+import SmokingCompleteModal from './components/SmokingCompleteModal';
 import { useFirebase } from './hooks/useFirebase';
 import { getTossShareLink, share } from '@apps-in-toss/web-framework';
 
@@ -16,6 +17,7 @@ function App() {
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showPatchNotes, setShowPatchNotes] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<number | null>(null);
@@ -46,7 +48,7 @@ function App() {
             text: shareText,
             url: window.location.href,
           });
-        } catch {}
+        } catch { }
       } else {
         await navigator.clipboard.writeText(`${shareText}\n${window.location.href}`);
         alert('링크가 복사되었습니다!');
@@ -102,6 +104,9 @@ function App() {
       setCigaretteCount(c => c + 1);
       addCigarette(); // Firebase에 카운트 증가
       setBurnLevel(0);
+      setIsAutoMode(false); // 자동 모드 중지
+      setIsBurning(false); // 피우기 중지
+      setShowCompleteModal(true); // 완료 모달 표시
     }
   }, [burnLevel, addCigarette]);
 
@@ -309,6 +314,17 @@ function App() {
           © 2026 JO YEONG CHAN. All rights reserved.
         </p>
       </div>
+
+      {/* 담배 완료 모달 */}
+      <SmokingCompleteModal
+        isOpen={showCompleteModal}
+        onClose={() => setShowCompleteModal(false)}
+        onShare={handleShare}
+        moneySpent={moneySpent}
+        cigaretteCount={cigaretteCount}
+        minutesLost={minutesLost}
+        formatTime={formatTime}
+      />
 
       {/* 패치노트 모달 */}
       {showPatchNotes && (
