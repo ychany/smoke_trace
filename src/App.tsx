@@ -9,8 +9,8 @@ import { getTossShareLink, share } from '@apps-in-toss/web-framework';
 // 상수
 const PRICE_PER_CIGARETTE = 225; // 원
 const MINUTES_LOST_PER_CIGARETTE = 11; // 분
-const BURN_INTERVAL = 120; // ms - 누르고 있을 때 타는 속도
-const BURN_AMOUNT = 1; // 한 번에 타는 양 (15초 = 100번 x 150ms)
+const BURN_INTERVAL = 250; // ms - 누르고 있을 때 타는 속도 (모바일 최적화)
+const BURN_AMOUNT = 2; // 한 번에 타는 양 (12.5초 = 50번 x 250ms)
 
 function App() {
   const [cigaretteCount, setCigaretteCount] = useState(0);
@@ -219,12 +219,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-8 px-4 py-8 relative">
-      {/* 연기 오버레이 */}
+      {/* 연기 오버레이 (모바일 최적화: blur 제거) */}
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
         style={{
           backgroundColor: `rgba(80, 60, 40, ${smokeOpacity})`,
-          backdropFilter: smokeOpacity > 0 ? `blur(${smokeOpacity * 2}px)` : 'none'
         }}
       />
 
