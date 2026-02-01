@@ -235,7 +235,7 @@ function App() {
       />
 
       {/* 좌측 상단 버튼들 */}
-      <div style={{ position: 'absolute', top: '16px', left: '16px', display: 'flex', gap: '8px', zIndex: 10 }}>
+      <div style={{ position: 'absolute', top: '16px', left: '16px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 10 }}>
         {/* 메뉴 버튼 */}
         <div style={{ position: 'relative' }}>
           <button
