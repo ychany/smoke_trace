@@ -3,9 +3,9 @@ import { defineConfig } from '@apps-in-toss/web-framework/config';
 export default defineConfig({
   appName: 'smoketrace',
   brand: {
-    displayName: 'SMOKE TRACE',
+    displayName: '흡연의 흔적',
     primaryColor: '#f97316',
-    icon: './public/smoke_trace.png',
+    icon: 'https://smoketrace.vercel.app/smoke_trace.png',
   },
   permissions: [],
   web: {

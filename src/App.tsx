@@ -48,23 +48,23 @@ function App() {
 
   // 공유 기능
   const handleShare = async () => {
-    const shareUrl = 'https://smoketrace.vercel.app';
     const shareText = `🚬 SMOKE TRACE - 담배 한 개비가 남기는 흔적\n오늘 ${cigaretteCount}개비 피워서 ₩${moneySpent.toLocaleString()} 태웠습니다.`;
     try {
-      const tossLink = await getTossShareLink(shareUrl);
+      // 앱인토스 딥링크 사용
+      const tossLink = await getTossShareLink('intoss://smoketrace');
       await share({ message: `${shareText}\n${tossLink}` });
     } catch {
-      // 토스 환경이 아닌 경우
+      // 토스 환경이 아닌 경우 (웹)
+      const webShareText = `${shareText}\n\n토스 앱에서 '흡연의 흔적'을 검색해보세요!`;
       if (navigator.share) {
         try {
           await navigator.share({
             title: 'SMOKE TRACE',
-            text: shareText,
-            url: shareUrl,
+            text: webShareText,
           });
         } catch { }
       } else {
-        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        await navigator.clipboard.writeText(webShareText);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 2000);
       }
