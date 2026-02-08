@@ -98,11 +98,16 @@ export const subscribeToStats = (callback: (stats: { todayCount: number; totalCo
   });
 };
 
-// 실시간 활성 사용자 구독
+// 실시간 활성 사용자 구독 (최근 30초 이내 하트비트를 보낸 유저만 카운트)
 export const subscribeToActiveUsers = (callback: (count: number) => void) => {
   return onValue(activeUsersRef, (snapshot) => {
     const users = snapshot.val() || {};
-    callback(Object.keys(users).length);
+    const now = Date.now();
+    const TIMEOUT = 30 * 1000; // 30초
+    const activeCount = Object.values(users).filter((user: any) => {
+      return user.timestamp && (now - user.timestamp) < TIMEOUT;
+    }).length;
+    callback(activeCount);
   });
 };
 
