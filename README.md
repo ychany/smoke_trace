@@ -36,29 +36,7 @@ npm run build
 
 # 앱인토스 빌드 (.ait 파일 생성)
 npm run build:ait
-```
 
-## Firebase 보안 규칙
-
-```json
-{
-  "rules": {
-    "activeUsers": {
-      ".read": true,
-      "$uid": {
-        ".write": true
-      }
-    },
-    "stats": {
-      ".read": true,
-      ".write": true
-    },
-    "dailyStats": {
-      ".read": true,
-      ".write": true
-    }
-  }
-}
 ```
 
 ## 사용 방법
