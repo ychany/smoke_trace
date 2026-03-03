@@ -3,7 +3,7 @@ import Cigarette from './components/Cigarette';
 import SmokingCompleteModal from './components/SmokingCompleteModal';
 import DailyStatsModal from './components/DailyStatsModal';
 import { useFirebase } from './hooks/useFirebase';
-import { useAd } from './hooks/useAd';
+// import { useAd } from './hooks/useAd';
 import { getTossShareLink, share } from '@apps-in-toss/web-framework';
 
 // 상수
@@ -20,7 +20,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDailyStats, setShowDailyStats] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [showAdNotice, setShowAdNotice] = useState(false);
+  // const [showAdNotice, setShowAdNotice] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const clickTimerRef = useRef<number | null>(null);
   const isMouseDownRef = useRef(false);
@@ -38,13 +38,14 @@ function App() {
   // 토스트 메시지
   const [showToast, setShowToast] = useState(false);
 
-  // 광고 훅
-  const { loadAd, showAd, isAdSupported } = useAd();
+  // 광고 훅 (비활성화)
+  // const { loadAd, showAd, isAdSupported } = useAd();
+  // const isAdSupported = false;
 
-  // 앱 시작 시 광고 미리 로드
-  useEffect(() => {
-    loadAd();
-  }, [loadAd]);
+  // 앱 시작 시 광고 미리 로드 (비활성화)
+  // useEffect(() => {
+  //   loadAd();
+  // }, [loadAd]);
 
   // 공유 기능
   const handleShare = async () => {
@@ -117,25 +118,13 @@ function App() {
       setIsAutoMode(false); // 자동 모드 중지
       setIsBurning(false); // 피우기 중지
 
-      // 0.3초 대기 후 광고 안내 → 1.5초 후 광고 → 완료 모달
+      // 0.3초 대기 후 완료 모달
       setTimeout(() => {
-        if (isAdSupported) {
-          // 앱인토스: 광고 안내 → 광고 → 완료 모달
-          setShowAdNotice(true);
-          setTimeout(() => {
-            setShowAdNotice(false);
-            showAd(() => {
-              setShowCompleteModal(true);
-              loadAd(); // 다음 광고 미리 로드
-            });
-          }, 1500);
-        } else {
-          // 웹: 바로 완료 모달
-          setShowCompleteModal(true);
-        }
+        // 광고 비활성화 - 바로 완료 모달
+        setShowCompleteModal(true);
       }, 300);
     }
-  }, [burnLevel, addCigarette, showAd, isAdSupported, loadAd]);
+  }, [burnLevel, addCigarette]);
 
   // 마지막 탭 시간 (더블탭 감지용)
   const lastTapTimeRef = useRef(0);
@@ -400,8 +389,8 @@ function App() {
         dailyStats={dailyStats}
       />
 
-      {/* 광고 안내 화면 */}
-      {showAdNotice && (
+      {/* 광고 안내 화면 (비활성화) */}
+      {/* {showAdNotice && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="text-center text-white">
             <div className="text-5xl mb-4">🚬</div>
@@ -409,7 +398,7 @@ function App() {
             <p className="text-gray-400 text-sm mt-2">잠시 후 광고가 표시됩니다</p>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* 토스트 메시지 */}
       {showToast && (
