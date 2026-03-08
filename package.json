@@ -6,12 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:ait": "tsc -b && vite build && cd dist && zip -r ../smoke_trace.ait .",
+    "build:ait": "tsc -b && vite build && npx ait build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@apps-in-toss/web-framework": "^1.8.0",
+    "@apps-in-toss/web-framework": "^2.0.1",
     "firebase": "^12.8.0",
     "framer-motion": "^12.29.2",
     "lucide-react": "^0.563.0",
